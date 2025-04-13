@@ -48,6 +48,11 @@
           <span style="width: 2em; display: block;"></span>
           <button id="load_button">Load</button>
         </div>
+        <div style="display: flex;">
+          <button id="export_button">Export</button>
+          <span style="width: 2em; display: block;"></span>
+          <input type="file" id="import_file">
+        </div>
       </div>
       <div id="maze_elem">
       </div>
@@ -114,7 +119,7 @@
           };
         };
       });
-      save_button.addEventListener("click", (e) => {
+      function convert_to_json() {
         let saved = {
           "width": width_value.value,
           "height": height_value.value,
@@ -134,11 +139,13 @@
             "positions": poses,
           };
         }
-        window.localStorage.setItem("saved", JSON.stringify(saved));
+        return JSON.stringify(saved);
+      };
+      save_button.addEventListener("click", (e) => {
+        let saved = convert_to_json();
+        window.localStorage.setItem("saved", saved);
       });
-      function load () {
-        let saved = JSON.parse(window.localStorage.getItem("saved"));
-        if (saved === null) return;
+      function load(saved) {
         width_value.value = saved["width"];
         height_value.value = saved["height"];
         maze_elem.innerHTML = "";
@@ -201,8 +208,38 @@
           right_btn.dispatchEvent(new Event("click"));
         };
       };
-      load_button.addEventListener("click", (_) => load());
-      load();
+      function load_storage() {
+        let saved = JSON.parse(window.localStorage.getItem("saved"));
+        if (saved === null) return;
+        load(saved);
+      };
+      load_button.addEventListener("click", (_) => load_storage());
+      export_button.addEventListener("click", (e) => {
+        let saved = convert_to_json();
+        let file = new Blob([saved], {"type": "application/json"});
+        let a = document.createElement("a");
+        let url = URL.createObjectURL(file);
+        a.href = url;
+        a.download = "saved.json";
+        document.body.appendChild(a);
+        a.click();
+        setTimeout(() => {
+          document.body.removeChild(a);
+          window.URL.revokeObjectURL(url);
+        }, 0);
+      });
+      import_file.addEventListener("change", (e) => {
+        let file = e.target.files[0];
+        if (!file) return;
+        let reader = new FileReader();
+        reader.onload = (re) => {
+          let contents = re.target.result;
+          let saved = JSON.parse(contents);
+          load(saved);
+        };
+        reader.readAsText(file);
+      });
+      load_storage();
     </script>
   </body>
 </html>
