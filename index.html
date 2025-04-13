@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en-US">
+  <head>
+    <meta charset="utf-8">
+    <title>7maze</title>
+    <style>
+      body, html {
+        margin: 0;
+        padding: 0;
+        background-color: #121212;
+        color: #e5e5e5;
+      }
+      #maze_elem {
+          background-color: #0c0c0c;
+          display: grid;
+      }
+      .maze_block {
+          margin: 2em;
+          position: relative;
+      }
+      .maze_input {
+          background-color: #303030;
+          color: #e5e5e5;
+          border: 0;
+          width: 100%;
+          height: 100%;
+          min-width: 12em;
+          min-height: 4em;
+      }
+      .maze_btn {
+          background-color: #003000;
+          position: absolute;
+          display: block;
+      }
+    </style>
+  </head>
+  <body>
+    <div style="display: flex;">
+      <div>
+        <label for="width_value">Width: </label>
+        <input type="integer" id="width_value" value="20"><br>
+        <label for="height_value">Height: </label>
+        <input type="integer" id="height_value" value="20"><br>
+        <button id="create_button">Create</button><br>
+        <br>
+        <div style="display: flex;">
+          <button id="save_button">Save</button>
+          <span style="width: 2em; display: block;"></span>
+          <button id="load_button">Load</button>
+        </div>
+      </div>
+      <div id="maze_elem">
+      </div>
+    </div>
+    <script>
+      function btn_handler(e) {
+        if (e.currentTarget.enabled) {
+          e.currentTarget.style.backgroundColor = "#003000";
+          e.currentTarget.enabled = false;
+        } else {
+          e.currentTarget.style.backgroundColor = "white";
+          e.currentTarget.enabled = true;
+        };
+      };
+      var maze = {};
+      create_button.addEventListener("click", (e) => {
+        maze_elem.innerHTML = "";
+        maze = {};
+        for (let y = 0; y < height_value.value; ++y) {
+          for (let x = 0; x < width_value.value; ++x) {
+            let up_btn = document.createElement("span");
+            up_btn.classList.add("maze_btn");
+            up_btn.style.width = "100%";
+            up_btn.style.height = "1em";
+            up_btn.style.top = "-1em";
+            up_btn.enabled = false;
+            up_btn.addEventListener("click", btn_handler);
+            let down_btn = document.createElement("span");
+            down_btn.classList.add("maze_btn");
+            down_btn.style.width = "100%";
+            down_btn.style.height = "1em";
+            down_btn.style.bottom = "-1em";
+            down_btn.enabled = false;
+            down_btn.addEventListener("click", btn_handler);
+            let left_btn = document.createElement("span");
+            left_btn.classList.add("maze_btn");
+            left_btn.style.width = "1em";
+            left_btn.style.height = "100%";
+            left_btn.style.top = "0";
+            left_btn.style.left = "-1em";
+            left_btn.enabled = false;
+            left_btn.addEventListener("click", btn_handler);
+            let right_btn = document.createElement("span");
+            right_btn.classList.add("maze_btn");
+            right_btn.style.width = "1em";
+            right_btn.style.height = "100%";
+            right_btn.style.top = "0";
+            right_btn.style.right = "-1em";
+            right_btn.enabled = false;
+            right_btn.addEventListener("click", btn_handler);
+            let text_inp = document.createElement("textarea");
+            text_inp.classList.add("maze_input");
+            let block = document.createElement("span");
+            block.classList.add("maze_block");
+            block.style.gridColumn = x + 1;
+            block.style.gridRow = y + 1;
+            maze_elem.appendChild(block);
+            maze[block.style.gridArea] = block;
+            block.appendChild(text_inp);
+            block.appendChild(up_btn);
+            block.appendChild(down_btn);
+            block.appendChild(left_btn);
+            block.appendChild(right_btn);
+          };
+        };
+      });
+      save_button.addEventListener("click", (e) => {
+        let saved = {
+          "width": width_value.value,
+          "height": height_value.value,
+          "maze": {},
+        };
+        for (let key in maze) {
+          let block = maze[key];
+          let text_inp = block.querySelector("textarea");
+          let btns = block.getElementsByTagName("span");
+          let poses = [];
+          if (btns[0].enabled) poses.push("up");
+          if (btns[1].enabled) poses.push("down");
+          if (btns[2].enabled) poses.push("left");
+          if (btns[3].enabled) poses.push("right");
+          saved.maze[key] = {
+            "text": text_inp.value,
+            "positions": poses,
+          };
+        }
+        window.localStorage.setItem("saved", JSON.stringify(saved));
+      });
+      function load () {
+        let saved = JSON.parse(window.localStorage.getItem("saved"));
+        if (saved === null) return;
+        width_value.value = saved["width"];
+        height_value.value = saved["height"];
+        maze_elem.innerHTML = "";
+        maze = {};
+        for (let gridArea in saved["maze"]) {
+          let maze_el = saved["maze"][gridArea];
+          let block = document.createElement("span");
+          block.classList.add("maze_block");
+          block.style.gridArea = gridArea;
+          maze_elem.appendChild(block);
+          maze[block.style.gridArea] = block;
+          let text_inp = document.createElement("textarea");
+          text_inp.classList.add("maze_input");
+          text_inp.value = maze_el["text"];
+          block.appendChild(text_inp);
+          let up_btn = document.createElement("span");
+          up_btn.classList.add("maze_btn");
+          up_btn.style.width = "100%";
+          up_btn.style.height = "1em";
+          up_btn.style.top = "-1em";
+          up_btn.enabled = false;
+          up_btn.addEventListener("click", btn_handler);
+          block.appendChild(up_btn);
+          up_btn.enabled = (maze_el["positions"].indexOf("up") === -1);
+          up_btn.dispatchEvent(new Event("click"));
+
+          let down_btn = document.createElement("span");
+          down_btn.classList.add("maze_btn");
+          down_btn.style.width = "100%";
+          down_btn.style.height = "1em";
+          down_btn.style.bottom = "-1em";
+          down_btn.enabled = false;
+          down_btn.addEventListener("click", btn_handler);
+          block.appendChild(down_btn);
+          down_btn.enabled = (maze_el["positions"].indexOf("down") === -1);
+          down_btn.dispatchEvent(new Event("click"));
+
+          let left_btn = document.createElement("span");
+          left_btn.classList.add("maze_btn");
+          left_btn.style.width = "1em";
+          left_btn.style.height = "100%";
+          left_btn.style.top = "0";
+          left_btn.style.left = "-1em";
+          left_btn.enabled = false;
+          left_btn.addEventListener("click", btn_handler);
+          block.appendChild(left_btn);
+          left_btn.enabled = (maze_el["positions"].indexOf("left") === -1);
+          left_btn.dispatchEvent(new Event("click"));
+
+          let right_btn = document.createElement("span");
+          right_btn.classList.add("maze_btn");
+          right_btn.style.width = "1em";
+          right_btn.style.height = "100%";
+          right_btn.style.top = "0";
+          right_btn.style.right = "-1em";
+          right_btn.enabled = false;
+          right_btn.addEventListener("click", btn_handler);
+          block.appendChild(right_btn);
+          right_btn.enabled = (maze_el["positions"].indexOf("right") === -1);
+          right_btn.dispatchEvent(new Event("click"));
+        };
+      };
+      load_button.addEventListener("click", (_) => load());
+      load();
+    </script>
+  </body>
+</html>
